@@ -392,9 +392,38 @@ function gameOver() {
   
   titleEl.textContent = 'GAME OVER!';
   subEl.textContent = `Score: ${score} | Best: ${highscore}`;
+  
+  // Add Cerebras text
+  const cerebrasText = document.createElement('p');
+  cerebrasText.textContent = 'This was made with Cerebras in 30 seconds';
+  cerebrasText.style.color = '#FFFFFF';
+  cerebrasText.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
+  cerebrasText.style.marginTop = '0.5rem';
+  cerebrasText.style.marginBottom = '1rem';
+  cerebrasText.style.textShadow = '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
+  
+  // Clear any existing Cerebras text
+  const existingCerebras = overlay.querySelector('.cerebras-text');
+  if (existingCerebras) {
+    existingCerebras.remove();
+  }
+  
+  cerebrasText.className = 'cerebras-text';
+  overlay.appendChild(cerebrasText);
+  
   instructionsEl.classList.add('hide');
   startBtn.classList.add('hide');
   restartBtn.classList.remove('hide');
+  
+  // Show API key button
+  const apiKeyBtn = document.getElementById('api-key');
+  if (apiKeyBtn) {
+    apiKeyBtn.classList.remove('hide');
+    apiKeyBtn.addEventListener('click', () => {
+      window.open('https://cloud.cerebras.ai/platform/org_8pht65mxtfjk4ejnjfmwhm34/playground?utm_source=inferencedocs', '_blank');
+    });
+  }
+  
   overlay.classList.remove('hide');
 }
 
@@ -406,6 +435,18 @@ function showMenu() {
   instructionsEl.classList.remove('hide');
   startBtn.classList.remove('hide');
   restartBtn.classList.add('hide');
+  
+  // Hide API key button and remove Cerebras text
+  const apiKeyBtn = document.getElementById('api-key');
+  if (apiKeyBtn) {
+    apiKeyBtn.classList.add('hide');
+  }
+  
+  const existingCerebras = overlay.querySelector('.cerebras-text');
+  if (existingCerebras) {
+    existingCerebras.remove();
+  }
+  
   overlay.classList.remove('hide');
   scoreEl.classList.add('hide');
   highscoreEl.classList.add('hide');
