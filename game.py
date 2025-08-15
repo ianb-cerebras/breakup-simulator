@@ -106,15 +106,13 @@ class BossMessage:
         # Different toxic ex messages
         self.ex_messages = [
             "We need to talk",
+            "Downloading Tinder isn't cheating",
             "Where have you been?",
             "Why won't you answer my texts?",
-            "I know you're online",
             "You owe me an explanation",
-            "Everyone says you've changed",
             "Are you seeing someone else?",
             "I'm not letting go that easily",
             "You can't just ignore me forever",
-            "I saw you post them on Instagram",
             "Do you even care about our relationship?",
             "I thought we had something special",
             "You're making this too complicated",

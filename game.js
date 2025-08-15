@@ -225,19 +225,17 @@ class Pipe {
   wrapText(text, maxWidth) {
     const words = text.split(' ');
     const lines = [];
-    let currentLine = '';
-    
-    words.forEach(word => {
-      const testLine = currentLine + (currentLine ? ' ' : '') + word;
-      if (testLine.length * 6 > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
+    let line = '';
+    words.forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = w;
       } else {
-        currentLine = testLine;
+        line = test;
       }
     });
-    
-    if (currentLine) lines.push(currentLine);
+    if (line) lines.push(line);
     return lines;
   }
   
