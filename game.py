@@ -160,7 +160,7 @@ class BossMessage:
             "You're being too insecure",
             "I'm not trying to manipulate you",
             "You're being too emotional",
-            "What does "gaslight" even mean",
+            "What does gaslighting even mean",
             "Stop being so needy",
             "I'm not trying to ignore you",
             "You're being too dependent",
@@ -354,8 +354,8 @@ class Game:
         
         # Draw game state messages
         if self.game_state == "start":
-            title_text = title_font.render("BOSS MESSAGE AVOIDER", True, YELLOW)
-            subtitle_text = font.render("Avoid those pesky work messages!", True, WHITE)
+            title_text = title_font.render("TOXIC EX AVOIDER", True, YELLOW)
+            subtitle_text = font.render("Avoid those pesky texts messages!", True, WHITE)
             start_text = font.render("Press SPACE to Start", True, GREEN)
             
             screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 3))
