@@ -1,7 +1,8 @@
 [build]
   command = """
-    pip install --upgrade pip
-    pip install pygbag pygame
+    python -m ensurepip --upgrade
+    python -m pip install --upgrade pip
+    python -m pip install pygbag pygame
     # --archive creates build/web/archives/… with the wheels inside
     python -m pygbag --archive awesome --build game.py
   """
