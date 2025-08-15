@@ -1,12 +1,6 @@
 [build]
-  command = """
-    python -m ensurepip --upgrade
-    python -m pip install --upgrade pip
-    python -m pip install pygbag pygame
-    # --archive creates build/web/archives/… with the wheels inside
-    python -m pygbag --archive awesome --build game.py
-  """
-  publish = "build/web"
+  # No build command needed - serving static files
+  publish = "."
 
 
 
