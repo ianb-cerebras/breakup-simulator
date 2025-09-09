@@ -66,7 +66,7 @@ const TOXIC_MESSAGES = [
   "You're just scared of commitment",
   "I know what's best for you",
   "You don't know what you want",
-  "I'm the only one who understands you",
+  "I'm not the person you think I am",
   "You're making a huge mistake",
   "I'll make you happy again",
   "You're just going through a phase",
@@ -89,453 +89,290 @@ const TOXIC_MESSAGES = [
   "You're so jealous",
   "You're being too insecure",
   "I'm not trying to manipulate you",
-  "You're being too emotional",
-  "What does gaslighting even mean",
-  "Stop being so needy",
-  "I'm not trying to ignore you",
   "You're being too dependent",
   "I'm not trying to make you crazy"
 ];
 
-function randomText() {
-  return TOXIC_MESSAGES[Math.floor(Math.random() * TOXIC_MESSAGES.length)];
-}
+// Game state
+let gameState = "start"; // "start", "playing", "gameover"
+let score = 0;
+let highscore = localStorage.getItem("toxicExHighscore") || 0;
+highscoreEl.textContent = "Best: " + highscore;
 
-class Bird {
-  constructor() {
-    this.x = 100;
-    this.y = H / 2;
-    this.vy = 0;
-    this.alive = true;
-    this.flapAnimation = 0;
-    this.angle = 0;
-  }
+// Bird object
+const bird = {
+  x: 100,
+  y: H / 2,
+  velocity: 0,
   
-  flap() {
-    this.vy = JUMP;
-    this.flapAnimation = 8;
-  }
-  
-  update() {
-    this.vy += GRAVITY;
-    this.y += this.vy;
+  draw: function() {
+    ctx.fillStyle = "#FFD700"; // Yellow bird for retro look
+    ctx.fillRect(this.x, this.y, BIRD_SIZE, BIRD_SIZE);
     
-    if (this.flapAnimation > 0) this.flapAnimation--;
-    
-    this.angle = Math.min(Math.max(this.vy * 2, -30), 90);
-    
-    if (this.y + BIRD_SIZE > H - GROUND_HEIGHT || this.y < 0) {
-      this.alive = false;
-    }
-  }
-  
-  draw() {
-    ctx.save();
-    ctx.translate(this.x + BIRD_SIZE/2, this.y + BIRD_SIZE/2);
-    ctx.rotate(this.angle * Math.PI / 180);
-    
-    ctx.fillStyle = "#FFFF66";
-    ctx.fillRect(-BIRD_SIZE/2, -BIRD_SIZE/2, BIRD_SIZE, BIRD_SIZE);
-    
-    ctx.fillStyle = "#FFEB3B";
-    ctx.fillRect(-BIRD_SIZE/2 + 2, -BIRD_SIZE/2 + 2, BIRD_SIZE - 4, BIRD_SIZE - 4);
-    
+    // Draw eyes for a more bird-like appearance
     ctx.fillStyle = "#000";
-    ctx.fillRect(BIRD_SIZE/2 - 10, -8, 6, 6);
-    ctx.fillRect(BIRD_SIZE/2 - 9, -7, 4, 4);
-    
-    ctx.fillStyle = "#FFF";
-    ctx.fillRect(BIRD_SIZE/2 - 8, -6, 2, 2);
-    
-    ctx.fillStyle = "#FFA500";
-    ctx.beginPath();
-    ctx.moveTo(BIRD_SIZE/2, 0);
-    ctx.lineTo(BIRD_SIZE/2 + 10, -5);
-    ctx.lineTo(BIRD_SIZE/2 + 10, 5);
-    ctx.closePath();
-    ctx.fill();
-    
-    const wingOffset = this.flapAnimation > 0 ? 
-      (this.flapAnimation % 4 < 2 ? -5 : 5) : 0;
-    
-    ctx.fillStyle = "#FFD54F";
-    ctx.fillRect(-BIRD_SIZE/2 + 2, wingOffset, 15, 10);
-    ctx.fillStyle = "#FFCA28";
-    ctx.fillRect(-BIRD_SIZE/2 + 4, wingOffset + 2, 11, 6);
-    
-    ctx.restore();
-  }
+    ctx.fillRect(this.x + 30, this.y + 10, 5, 5);
+    ctx.fillRect(this.x + 30, this.y + 25, 5, 5);
+  },
   
-  rect() {
-    return {x: this.x, y: this.y, w: BIRD_SIZE, h: BIRD_SIZE};
-  }
-}
-
-class Pipe {
-  constructor(offsetX) {
-    this.x = offsetX;
-    this.top = Math.random() * (H - GAP - 200) + 100;
-    this.topMsg = randomText();
-    this.botMsg = randomText();
-    this.passed = false;
-    this.animCounter = 0;
-  }
-  
-  update() {
-    this.x -= SPEED;
-    this.animCounter++;
-  }
-  
-  draw() {
-    const bounce = Math.sin(this.animCounter * 0.1) * 2;
+  update: function() {
+    this.velocity += GRAVITY;
+    this.y += this.velocity;
     
-    ctx.fillStyle = "#FF3333";
-    ctx.fillRect(this.x, 0, PIPE_W, this.top);
-    ctx.fillRect(this.x, this.top + GAP, PIPE_W, H - this.top - GAP - GROUND_HEIGHT);
-    
-    ctx.fillStyle = "#CC0000";
-    ctx.fillRect(this.x + 2, 2, PIPE_W - 4, this.top - 4);
-    ctx.fillRect(this.x + 2, this.top + GAP + 2, PIPE_W - 4, H - this.top - GAP - GROUND_HEIGHT - 4);
-    
-    ctx.fillStyle = "#1E6432";
-    ctx.fillRect(this.x - 5, this.top - 10, PIPE_W + 10, 10);
-    ctx.fillRect(this.x - 5, this.top + GAP, PIPE_W + 10, 10);
-    
-    ctx.fillStyle = "#32FF64";
-    ctx.fillRect(this.x - 3, this.top - 8, PIPE_W + 6, 6);
-    ctx.fillRect(this.x - 3, this.top + GAP + 2, PIPE_W + 6, 6);
-    
-    ctx.save();
-    ctx.font = "10px 'Press Start 2P', monospace";
-    ctx.fillStyle = "#FFF";
-    
-    const topLines = this.wrapText(this.topMsg, PIPE_W - 10);
-    topLines.forEach((line, i) => {
-      ctx.fillText(line, this.x + 5, this.top - 20 - (topLines.length - i - 1) * 12 + bounce);
-    });
-    
-    const botLines = this.wrapText(this.botMsg, PIPE_W - 10);
-    botLines.forEach((line, i) => {
-      ctx.fillText(line, this.x + 5, this.top + GAP + 25 + i * 12 + bounce);
-    });
-    
-    ctx.restore();
-  }
-  
-  wrapText(text, maxWidth) {
-    const words = text.split(' ');
-    const lines = [];
-    let line = '';
-    words.forEach(w => {
-      const test = line ? line + ' ' + w : w;
-      if (ctx.measureText(test).width > maxWidth && line) {
-        lines.push(line);
-        line = w;
-      } else {
-        line = test;
+    // Ground collision
+    if (this.y + BIRD_SIZE >= H - GROUND_HEIGHT) {
+      this.y = H - GROUND_HEIGHT - BIRD_SIZE;
+      if (gameState === "playing") {
+        gameOver();
       }
-    });
-    if (line) lines.push(line);
-    return lines;
-  }
+    }
+    
+    // Ceiling collision
+    if (this.y <= 0) {
+      this.y = 0;
+      this.velocity = 0;
+    }
+  },
   
-  collide(bird) {
-    const r = bird.rect();
-    const hitX = r.x + r.w > this.x && r.x < this.x + PIPE_W;
-    const hitY = r.y < this.top || r.y + r.h > this.top + GAP;
-    return hitX && hitY;
+  jump: function() {
+    this.velocity = JUMP;
+  },
+  
+  reset: function() {
+    this.y = H / 2;
+    this.velocity = 0;
   }
-}
+};
 
-class Background {
-  constructor() {
-    this.stars = [];
-    this.clouds = [];
-    this.groundPoints = [];
-    this.particles = [];
-    this.populate();
-  }
+// Toxic messages (replacing pipes)
+let toxicMessages = [];
+
+function ToxicMessage(x) {
+  this.x = x;
+  this.width = PIPE_W;
+  this.text = TOXIC_MESSAGES[Math.floor(Math.random() * TOXIC_MESSAGES.length)];
   
-  populate() {
-    for (let i = 0; i < 100; i++) {
-      this.stars.push({
-        x: Math.random() * W,
-        y: Math.random() * (H - GROUND_HEIGHT),
-        size: Math.random() * 2 + 1,
-        brightness: Math.random() * 155 + 100,
-        twinkle: Math.random() * Math.PI * 2
-      });
-    }
-    
-    for (let i = 0; i < 8; i++) {
-      this.clouds.push({
-        x: Math.random() * W,
-        y: Math.random() * 200 + 50,
-        size: Math.random() * 60 + 40,
-        speed: Math.random() * 0.5 + 0.2
-      });
-    }
-    
-    for (let x = 0; x < W; x += 20) {
-      this.groundPoints.push({
-        x: x,
-        height: Math.random() * 30 + 20
-      });
-    }
-  }
+  // Random gap position
+  this.gapY = Math.floor(Math.random() * (H - GROUND_HEIGHT - GAP - 100)) + 50;
   
-  update() {
-    this.clouds.forEach(c => {
-      c.x -= c.speed;
-      if (c.x < -c.size) {
-        c.x = W + c.size;
-        c.y = Math.random() * 200 + 50;
-      }
-    });
+  this.draw = function() {
+    // Draw top message
+    ctx.fillStyle = "#FF0000"; // Red for toxic messages
+    ctx.fillRect(this.x, 0, this.width, this.gapY);
     
-    this.stars.forEach(s => {
-      s.twinkle += 0.05;
-    });
+    // Draw bottom message
+    ctx.fillRect(this.x, this.gapY + GAP, this.width, H - this.gapY - GAP - GROUND_HEIGHT);
     
-    if (Math.random() < 0.1) {
-      this.particles.push({
-        x: W,
-        y: Math.random() * (H - GROUND_HEIGHT),
-        vx: -(Math.random() * 2 + 1),
-        vy: Math.random() * 0.5 - 0.25,
-        life: 1
-      });
-    }
-    
-    this.particles = this.particles.filter(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life -= 0.01;
-      return p.life > 0 && p.x > 0;
-    });
-  }
-  
-  draw() {
-    const gradient = ctx.createLinearGradient(0, 0, 0, H);
-    gradient.addColorStop(0, "#0a0a2e");
-    gradient.addColorStop(0.5, "#16213e");
-    gradient.addColorStop(1, "#1e3a5f");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, W, H - GROUND_HEIGHT);
-    
-    this.stars.forEach(s => {
-      const brightness = s.brightness + Math.sin(s.twinkle) * 50;
-      ctx.fillStyle = `rgba(255, 255, 255, ${brightness / 255})`;
-      ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-    
-    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-    this.clouds.forEach(c => {
-      this.drawCloud(c.x, c.y, c.size);
-    });
-    
-    this.particles.forEach(p => {
-      ctx.fillStyle = `rgba(100, 255, 150, ${p.life * 0.5})`;
-      ctx.fillRect(p.x, p.y, 2, 2);
-    });
-    
-    ctx.fillStyle = "#1E6432";
+    // Draw ground
+    ctx.fillStyle = "#8B4513"; // Brown ground
     ctx.fillRect(0, H - GROUND_HEIGHT, W, GROUND_HEIGHT);
     
-    ctx.fillStyle = "#32FF64";
-    this.groundPoints.forEach(g => {
-      ctx.fillRect(g.x, H - g.height, 15, g.height);
-    });
+    // Draw text on obstacles
+    ctx.fillStyle = "#FFF";
+    ctx.font = "12px 'Press Start 2P'";
+    ctx.textAlign = "center";
     
-    ctx.fillStyle = "#28CC52";
-    this.groundPoints.forEach(g => {
-      ctx.fillRect(g.x + 2, H - g.height + 2, 11, g.height - 2);
-    });
-  }
+    // Top message
+    const topTextY = this.gapY - 10;
+    wrapText(this.text, this.x + this.width / 2, topTextY, this.width - 10);
+    
+    // Bottom message
+    const bottomTextY = this.gapY + GAP + 20;
+    wrapText(this.text, this.x + this.width / 2, bottomTextY, this.width - 10);
+  };
   
-  drawCloud(x, y, size) {
-    ctx.fillRect(x, y, size, size * 0.5);
-    ctx.fillRect(x + size * 0.2, y - size * 0.2, size * 0.6, size * 0.4);
-    ctx.fillRect(x + size * 0.6, y, size * 0.5, size * 0.4);
+  this.update = function() {
+    this.x -= SPEED;
+  };
+  
+  this.isOffScreen = function() {
+    return this.x + this.width < 0;
+  };
+  
+  this.collidesWith = function(bird) {
+    // Check collision with top message
+    if (
+      bird.x + BIRD_SIZE > this.x &&
+      bird.x < this.x + this.width &&
+      bird.y < this.gapY
+    ) {
+      return true;
+    }
+    
+    // Check collision with bottom message
+    if (
+      bird.x + BIRD_SIZE > this.x &&
+      bird.x < this.x + this.width &&
+      bird.y + BIRD_SIZE > this.gapY + GAP
+    ) {
+      return true;
+    }
+    
+    return false;
+  };
+}
+
+// Function to wrap text within a specified width
+function wrapText(text, x, y, maxWidth) {
+  const words = text.split(" ");
+  let line = "";
+  let lineHeight = 15;
+  let lines = [];
+  
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + " ";
+    const testWidth = ctx.measureText(testLine).width;
+    
+    if (testWidth > maxWidth && i > 0) {
+      lines.push(line);
+      line = words[i] + " ";
+    } else {
+      line = testLine;
+    }
+  }
+  lines.push(line);
+  
+  // Draw lines
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x, y + i * lineHeight);
   }
 }
 
-let bird, pipes, score, highscore = 0, playing = false, gameState = "menu", background;
-
-function reset() {
-  bird = new Bird();
-  pipes = [new Pipe(W + 200), new Pipe(W + 500)];
+// Initialize game
+function init() {
+  toxicMessages = [];
   score = 0;
-  scoreEl.textContent = 'Score: 0';
-  highscoreEl.textContent = 'Best: ' + highscore;
-  background = new Background();
-}
-reset();
-
-function startGame() {
-  reset();
-  playing = true;
-  gameState = "playing";
-  overlay.classList.add('hide');
-  scoreEl.classList.remove('hide');
-  highscoreEl.classList.remove('hide');
+  scoreEl.textContent = "Score: " + score;
+  bird.reset();
 }
 
+// Game over function
 function gameOver() {
-  playing = false;
   gameState = "gameover";
+  restartBtn.classList.remove("hide");
   
+  // Update highscore
   if (score > highscore) {
     highscore = score;
-    localStorage.setItem('highscore', highscore);
+    localStorage.setItem("toxicExHighscore", highscore);
+    highscoreEl.textContent = "Best: " + highscore;
   }
-  
-  titleEl.textContent = 'GAME OVER!';
-  subEl.textContent = `Score: ${score} | Best: ${highscore}`;
-  
-  // Add Cerebras text
-  const cerebrasText = document.createElement('p');
-  cerebrasText.textContent = 'This was made with Cerebras in 30 seconds';
-  cerebrasText.style.color = '#FFFFFF';
-  cerebrasText.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
-  cerebrasText.style.marginTop = '0.5rem';
-  cerebrasText.style.marginBottom = '1rem';
-  cerebrasText.style.textShadow = '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
-  
-  // Clear any existing Cerebras text
-  const existingCerebras = overlay.querySelector('.cerebras-text');
-  if (existingCerebras) {
-    existingCerebras.remove();
-  }
-  
-  cerebrasText.className = 'cerebras-text';
-  overlay.appendChild(cerebrasText);
-  
-  instructionsEl.classList.add('hide');
-  startBtn.classList.add('hide');
-  restartBtn.classList.remove('hide');
-  
-  // Show API key button
-  const apiKeyBtn = document.getElementById('api-key');
-  if (apiKeyBtn) {
-    apiKeyBtn.classList.remove('hide');
-    apiKeyBtn.addEventListener('click', () => {
-      window.open('https://cloud.cerebras.ai/platform/org_8pht65mxtfjk4ejnjfmwhm34/playground?utm_source=inferencedocs', '_blank');
-    });
-  }
-  
-  overlay.classList.remove('hide');
 }
 
-function showMenu() {
-  gameState = "menu";
-  playing = false;
-  titleEl.textContent = 'TOXIC EX AVOIDER';
-  subEl.textContent = 'Avoid those texts!';
-  instructionsEl.classList.remove('hide');
-  startBtn.classList.remove('hide');
-  restartBtn.classList.add('hide');
+// Draw everything
+function draw() {
+  // Clear canvas
+  ctx.fillStyle = "#87CEEB"; // Sky blue background
+  ctx.fillRect(0, 0, W, H);
   
-  // Hide API key button and remove Cerebras text
-  const apiKeyBtn = document.getElementById('api-key');
-  if (apiKeyBtn) {
-    apiKeyBtn.classList.add('hide');
-  }
-  
-  const existingCerebras = overlay.querySelector('.cerebras-text');
-  if (existingCerebras) {
-    existingCerebras.remove();
-  }
-  
-  overlay.classList.remove('hide');
-  scoreEl.classList.add('hide');
-  highscoreEl.classList.add('hide');
-}
-
-highscore = parseInt(localStorage.getItem('highscore') || 0);
-highscoreEl.textContent = 'Best: ' + highscore;
-
-window.addEventListener('keydown', e => {
-  if (e.code === 'Space' && gameState === "playing") {
-    e.preventDefault();
-    bird.flap();
-  }
-  if (e.code === 'KeyR' && gameState === "gameover") {
-    startGame();
-  }
-});
-
-canvas.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  if (gameState === "playing") bird.flap();
-});
-
-startBtn.addEventListener('click', startGame);
-restartBtn.addEventListener('click', startGame);
-
-function createSoundEffect(frequency, duration, type = "square") {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-  
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + duration);
-}
-
-function loop() {
-  requestAnimationFrame(loop);
-  
-  ctx.clearRect(0, 0, W, H);
-  
-  background.draw();
-  
-  if (playing) {
-    bird.update();
-    background.update();
-    
-    if (pipes[pipes.length - 1].x < W * 0.6) {
-      pipes.push(new Pipe(W + PIPE_W));
-    }
-    
-    pipes.forEach(p => p.update());
-    
-    if (pipes[0] && pipes[0].x + PIPE_W < 0) {
-      pipes.shift();
-    }
-    
-    pipes.forEach(p => {
-      if (p.collide(bird)) {
-        bird.alive = false;
-        try { createSoundEffect(100, 0.3, "sawtooth"); } catch(e) {}
-      }
-      
-      if (!p.passed && p.x + PIPE_W < bird.x) {
-        score++;
-        p.passed = true;
-        scoreEl.textContent = 'Score: ' + score;
-        try { createSoundEffect(800, 0.1); } catch(e) {}
-      }
-    });
-    
-    if (!bird.alive) {
-      gameOver();
-    }
-  }
-  
-  pipes.forEach(p => p.draw());
+  // Draw bird
   bird.draw();
   
-  ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-  ctx.fillRect(0, 0, W, H);
+  // Draw toxic messages
+  toxicMessages.forEach(message => message.draw());
+  
+  // Draw score
+  if (gameState === "playing") {
+    scoreEl.textContent = "Score: " + score;
+  }
 }
 
-showMenu();
-loop();
+// Update everything
+function update() {
+  if (gameState !== "playing") return;
+  
+  // Update bird
+  bird.update();
+  
+  // Update toxic messages
+  for (let i = 0; i < toxicMessages.length; i++) {
+    toxicMessages[i].update();
+    
+    // Check collision
+    if (toxicMessages[i].collidesWith(bird)) {
+      gameOver();
+      return;
+    }
+    
+    // Check if passed (scoring)
+    if (toxicMessages[i].x + toxicMessages[i].width < bird.x && !toxicMessages[i].scored) {
+      score++;
+      toxicMessages[i].scored = true;
+    }
+    
+    // Remove off-screen messages
+    if (toxicMessages[i].isOffScreen()) {
+      toxicMessages.splice(i, 1);
+      i--;
+    }
+  }
+  
+  // Add new toxic message
+  if (toxicMessages.length === 0 || toxicMessages[toxicMessages.length - 1].x < W - 300) {
+    toxicMessages.push(new ToxicMessage(W));
+  }
+}
+
+// Game loop
+function gameLoop() {
+  draw();
+  update();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// Event listeners
+startBtn.addEventListener("click", () => {
+  gameState = "playing";
+  overlay.classList.add("hide");
+  scoreEl.classList.remove("hide");
+  init();
+});
+
+restartBtn.addEventListener("click", () => {
+  gameState = "playing";
+  overlay.classList.add("hide");
+  restartBtn.classList.add("hide");
+  init();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    if (gameState === "start") {
+      gameState = "playing";
+      overlay.classList.add("hide");
+      scoreEl.classList.remove("hide");
+      init();
+    } else if (gameState === "playing") {
+      bird.jump();
+    } else if (gameState === "gameover") {
+      gameState = "playing";
+      overlay.classList.add("hide");
+      restartBtn.classList.add("hide");
+      init();
+    }
+  }
+  
+  if (e.code === "KeyR") {
+    if (gameState === "gameover") {
+      gameState = "playing";
+      overlay.classList.add("hide");
+      restartBtn.classList.add("hide");
+      init();
+    }
+  }
+});
+
+canvas.addEventListener("click", () => {
+  if (gameState === "playing") {
+    bird.jump();
+  }
+});
+
+// Touch support for mobile
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  if (gameState === "playing") {
+    bird.jump();
+  }
+});
